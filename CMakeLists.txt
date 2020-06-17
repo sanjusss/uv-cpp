@@ -2,7 +2,7 @@
 # Copyright (C) orcaer@yeah.net. All rights reserved.
 # Last modified: 2020-6-17
 
-CMAKE_MINIMUM_REQUIRED(VERSION 3.11)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 PROJECT(uv_cpp)
 
