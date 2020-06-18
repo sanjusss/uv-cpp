@@ -2,10 +2,16 @@
 #include <memory>
 #include <atomic>
 
+#ifdef USE_BOOST
 #include <boost/asio.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
-
 using namespace boost::asio;
+using namespace boost::system;
+#else
+#include <asio.hpp>
+using namespace asio;
+typedef asio::steady_timer deadline_timer;
+#endif
 
 struct SocketStr
 {
@@ -23,13 +29,13 @@ std::atomic<uint64_t> cnt(0);
 
 void write(SocketPtr ptr,size_t size)
 {
-    ptr->pSocket->async_write_some( buffer(ptr->writeBuffer, size), [ptr](const boost::system::error_code& error,std::size_t size)
+    ptr->pSocket->async_write_some( buffer(ptr->writeBuffer, size), [ptr](const error_code& error,std::size_t size)
     {
         startRead(ptr);
     });
 }
 
-void onRead(SocketPtr ptr,const boost::system::error_code& error,std::size_t size)
+void onRead(SocketPtr ptr,const error_code& error,std::size_t size)
 {
     if(error)
     {
@@ -48,7 +54,7 @@ void startRead(SocketPtr ptr)
     pSocket->async_read_some(buffer(buff,size),std::bind(&onRead,ptr,std::placeholders::_1,std::placeholders::_2));
 }
 
-void onNewConnection(io_service& io,ip::tcp::acceptor& acceptor, SocketPtr ptr,boost::system::error_code error)
+void onNewConnection(io_service& io,ip::tcp::acceptor& acceptor, SocketPtr ptr,error_code error)
 {
     if(error)
     {
@@ -65,7 +71,7 @@ void startAccept(io_service& io,ip::tcp::acceptor& acceptor)
     acceptor.async_accept(*(ptr->pSocket), std::bind(&onNewConnection,std::ref(io),std::ref(acceptor),ptr,std::placeholders::_1));
 }
 
-void onTimer(deadline_timer& timer,const boost::system::error_code &ec)
+void onTimer(deadline_timer& timer,const error_code &ec)
 {
     std::cout << "send data:" << (cnt >> 10) << " kbyte/s" << std::endl;
     cnt = 0;
@@ -74,7 +80,7 @@ void onTimer(deadline_timer& timer,const boost::system::error_code &ec)
 
 void startTimer(deadline_timer& timer)
 {
-    timer.expires_at(timer.expires_at()+ boost::posix_time::milliseconds(1000));
+    timer.expires_at(timer.expires_at()+ chrono::milliseconds(1000));
     timer.async_wait(std::bind(&onTimer,std::ref(timer),std::placeholders::_1));
 }
 
@@ -84,7 +90,7 @@ int main(int argc, char* argv[])
     ip::tcp::acceptor acceptor(io, ip::tcp::endpoint(ip::tcp::v4(), 10012));
     startAccept(io,acceptor);
 
-    deadline_timer timer(io, boost::posix_time::milliseconds(1000));
+    deadline_timer timer(io, chrono::milliseconds(1000));
     startTimer(timer);
 
     io.run();

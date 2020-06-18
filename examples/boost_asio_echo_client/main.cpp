@@ -3,10 +3,15 @@
 #include <atomic>
 #include <vector>
 
+#ifdef USE_BOOST
 #include <boost/asio.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
-
 using namespace boost::asio;
+using namespace boost::system;
+#else
+#include <asio.hpp>
+using namespace asio;
+#endif
 
 struct SocketStr
 {
@@ -20,13 +25,13 @@ void startRead(SocketPtr ptr);
 
 void write(SocketPtr ptr,size_t size)
 {
-    ptr->pSocket->async_write_some( buffer(ptr->writeBuffer, size), [ptr](const boost::system::error_code& error,std::size_t size)
+    ptr->pSocket->async_write_some( buffer(ptr->writeBuffer, size), [ptr](const error_code& error,std::size_t size)
     {
         startRead(ptr);
     });
 }
 
-void onRead(SocketPtr ptr,const boost::system::error_code& error,std::size_t size)
+void onRead(SocketPtr ptr,const error_code& error,std::size_t size)
 {
     if(error)
     {
@@ -51,7 +56,7 @@ void startClients(io_service& io,std::vector<SocketPtr>& sockets,ip::tcp::endpoi
         SocketPtr ptr = std::make_shared<SocketStr>();
         sockets.push_back(ptr);
         ptr->pSocket = std::make_shared<ip::tcp::socket>(io);
-        ptr->pSocket->async_connect(endpoint, [ptr](const boost::system::error_code& error)
+        ptr->pSocket->async_connect(endpoint, [ptr](const error_code& error)
         {
             if(error)
             {
