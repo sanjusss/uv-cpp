@@ -1,6 +1,7 @@
 ﻿#include <iostream>
 #include <memory>
 #include <atomic>
+#include <functional>
 
 #ifdef USE_BOOST
 #include <boost/asio.hpp>

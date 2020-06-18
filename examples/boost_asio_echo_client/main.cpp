@@ -2,6 +2,7 @@
 #include <memory>
 #include <atomic>
 #include <vector>
+#include <functional>
 
 #ifdef USE_BOOST
 #include <boost/asio.hpp>
